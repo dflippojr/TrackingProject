@@ -84,8 +84,6 @@ files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
 print(video[0].shape)
-img1 = io.imread('Frames/frame0001.jpg')
-img2 = io.imread('Frames/frame0002.jpg')
 radius = 35
 bandwidth = 35
 # these locations must be saved as floats for no rounding
