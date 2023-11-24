@@ -53,13 +53,13 @@ def colorHistogram(X, bins, x, y, h):
         histogram[int(feature[2]//bins), int(feature[3]//bins),
                   int(feature[4]//bins)] += k
     # normalize the histogram to sum to 1
-    histogram = histogram/np.sum(histogram)
+    histogram = histogram/(np.sum(histogram) + 1e-10)
     return histogram
 
 
 # Question 4
 # Create a function to calculate a vector of the mean-shift weights(w), where there is a weight wi for each pixel i in the neighborhood
-def meanshiftWeights(X, q_model, p_test, bins):
+def meanshiftWeights(q_model, p_test, bins):
     # will be calculating w for each pixel in the neighborhood so need same shape, weights will be 3d
     weights = np.zeros((bins, bins, bins))
     # iterate on pixels of cube
@@ -73,13 +73,15 @@ def meanshiftWeights(X, q_model, p_test, bins):
                     weights[i, j, k] = 0
                 else:
                     weights[i, j, k] = np.sqrt(
-                        q_model[i, j, k]/p_test[i, j, k])
+                        q_model[i, j, k]/(p_test[i, j, k] + 1e-10))
     return weights
 
 
 # Question 5
-path = os.listdir('/Users/dflippo/Documents/GitHub/TrackingProject/Frames')
-files = [os.path.join('./Frames', image) for image in path]
+path = os.listdir('/Users/dflippo/Documents/GitHub/TrackingProject/FullPutt')
+path.remove('.DS_Store')
+files = [os.path.join('./FullPutt', image) for image in path]
+
 files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
@@ -87,8 +89,8 @@ print(video[0].shape)
 radius = 35
 bandwidth = 35
 # these locations must be saved as floats for no rounding
-xLoc = 542.
-yLoc = 1116.
+xLoc = 641.
+yLoc = 1157.
 bins = 16
 # in order to also report euclidean distance between the final two iterations
 eDist = 0.
@@ -110,7 +112,7 @@ for index in range(1, len(video)-1):
             neighbors2, bins, int(xLoc), int(yLoc), bandwidth)
 
         # calculate mean shift weights to find best location, keep bin size
-        weights = meanshiftWeights(neighbors, q_model, p_test, bins)
+        weights = meanshiftWeights(q_model, p_test, bins)
 
         # find mean shift vector, given by sum of location + movement around radius multiplied by the weight vector. This is then divided by the sum of the weights
         # weights are 3d, so locations will be within the cube as well. the result y is simply the point of most similarity which will be at the top of the surface in the cube
@@ -151,6 +153,6 @@ output = np.copy(video[-1])
 fig, ax = plt.subplots()
 plt.imshow(output)
 # Draw a line that passes through all the locations in the path
-ax.plot(*zip(*path), color='r')
+# ax.plot(*zip(*path), color='r')
 plt.axis('off')
 plt.show()
