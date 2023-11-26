@@ -7,6 +7,7 @@ from skimage import filters
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from mpl_toolkits.mplot3d import Axes3D
 import os
 import pandas as pd
 import cv2
@@ -77,32 +78,51 @@ def meanshiftWeights(q_model, p_test, bins):
     return weights
 
 
+def display_color_histogram(histogram):
+    # Create a 3D figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Get the coordinates of non-zero values in the histogram
+    x, y, z = np.where(histogram > 0)
+
+    # Get the corresponding non-zero values
+    c = histogram[x, y, z]
+
+    # Plot the 3D histogram
+    img = ax.scatter(x, y, z, c=c, cmap=plt.hot())
+    fig.colorbar(img)
+    plt.show()
+
+
 # Question 5
-path = os.listdir('/Users/dflippo/Documents/GitHub/TrackingProject/FullPutt')
+path = os.listdir('/Users/dflippo/Documents/GitHub/TrackingProject/Frames')
 path.remove('.DS_Store')
-files = [os.path.join('./FullPutt', image) for image in path]
+files = [os.path.join('./Frames', image) for image in path]
 
 files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
 print(video[0].shape)
-radius = 35
-bandwidth = 35
+radius = 50
+bandwidth = 50
 # these locations must be saved as floats for no rounding
-xLoc = 641.
-yLoc = 1157.
+xLoc = 630.
+yLoc = 1382.
 bins = 16
 # in order to also report euclidean distance between the final two iterations
 eDist = 0.
 path = []
-# the following must recieve integers for location for indexing
-# img1 model built with circular neighborhood with a rad of 25, centered at (149, 174)
-neighbors = circularNeighbors(video[0], int(xLoc), int(yLoc), radius)
-# then passed to hist with a bin of 16 at the same coordinates and 25 bandwith
 
-q_model = colorHistogram(neighbors, bins, int(xLoc), int(yLoc), bandwidth)
 for index in range(1, len(video)-1):
 
+    # the following must recieve integers for location for indexing
+    # img1 model built with circular neighborhood with a rad of 25, centered at (149, 174)
+    neighbors = circularNeighbors(video[0], int(xLoc), int(yLoc), radius)
+    # then passed to hist with a bin of 16 at the same coordinates and 25 bandwith
+
+    q_model = colorHistogram(neighbors, bins, int(xLoc), int(yLoc), bandwidth)
+    # display_color_histogram(q_model)
     # perform 25 iterations of mean shift tracking on img2
     for i in range(25):
         # img2 model constructed the same way
@@ -143,8 +163,9 @@ for index in range(1, len(video)-1):
         xLoc = y1[0]
         yLoc = y1[1]
     path.append((xLoc, yLoc))
-
+    # plot_3d_histogram(p_test)
     # at this point all steps for the tracking should be completed and the resultant x and y pair should be the best location of the target candidate after 25 rounds
+    print("Frame: ", index, "/", len(video))
     print((xLoc, yLoc))
     print(eDist)
 
@@ -153,6 +174,6 @@ output = np.copy(video[-1])
 fig, ax = plt.subplots()
 plt.imshow(output)
 # Draw a line that passes through all the locations in the path
-# ax.plot(*zip(*path), color='r')
+ax.plot(*zip(*path), color='r')
 plt.axis('off')
 plt.show()
