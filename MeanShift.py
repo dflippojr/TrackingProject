@@ -30,7 +30,7 @@ def circularNeighbors(img, x, y, radius):
             if (np.sqrt(i**2 + j**2) <= radius):
                 # collect information about the point x y R G B
                 feature = np.array([(x+i), (y+j), img[x+i,
-                                                      y+j, 0], img[x+i, i+j, 1], img[x+i, y+j, 2]])
+                                                      y+j, 0], img[x+i, y+j, 1], img[x+i, y+j, 2]])
                 features.append(feature)
                 count += 1
     return np.array(features)
@@ -84,21 +84,6 @@ def meanshiftWeights(X, q_model, p_test, bins):
             weights[i] = 0
         else:
             weights[i] = np.sqrt(model/test)
-
-    # # iterate on pixels of cube
-    # for l in range(a):
-    #     for i in range(bins):
-    #         for j in range(bins):
-    #             for k in range(bins):
-    #                 if (X[l][2] < ((256 / bins)*i) and (X[l][2]) >= ((256 / bins)*(i-1)) and X[l][3] < ((256 / bins)*j) and (X[l][3]) >= ((256 / bins)*(j-1)) and X[l][4] < ((256 / bins)*k) and (X[l][4]) >= ((256 / bins)*(k-1))):
-    #                     # sum of roots of q model divided by p test, but if p test == 0 we can't divide so we must skip
-    #                     # since we do this operation on the entire histogram, areas outside of the neighborhood can have a p_test value of 0
-    #                     # this is avoided by only looking at bins where the pixels in the neighborhood reside
-    #                     if (p_test[i, j, k] == 0):
-    #                         weights[l] = 0
-    #                     else:
-    #                         weights[l] = np.sqrt(
-    #                             q_model[i, j, k]/p_test[i, j, k])
     return weights
 
 
@@ -112,12 +97,13 @@ files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
 print(video[0].shape)
-
+# plt.imshow(video[0])
+# plt.show()
 radius = 75
 bandwidth = 100
 # these locations must be saved as floats for no rounding
-xLoc = 633.
-yLoc = 1379.
+xLoc = 686.
+yLoc = 1350.
 bins = 16
 # in order to also report euclidean distance between the final two iterations
 eDist = 0.
@@ -133,8 +119,8 @@ for index in range(0, len(video)-1):
     q_model = colorHistogram(neighbors, bins, int(xLoc), int(yLoc), bandwidth)
     # display_color_histogram(q_model)
     # perform 25 iterations of mean shift tracking on img2
-    Y = np.zeros((25, 2))
-    for i in range(25):
+    Y = np.zeros((50, 2))
+    for i in range(50):
         # img2 model constructed the same way
         neighbors2 = circularNeighbors(
             video[index+1], int(xLoc), int(yLoc), radius)
@@ -152,23 +138,9 @@ for index in range(0, len(video)-1):
             else:
                 Y[i][0] += (neighbors2[j][0]*weights[j]) / np.sum(weights)
                 Y[i][1] += (neighbors2[j][1]*weights[j]) / np.sum(weights)
-        # # find mean shift vector, given by sum of location + movement around radius multiplied by the weight vector. This is then divided by the sum of the weights
-        # # weights are 3d, so locations will be within the cube as well. the result y is simply the point of most similarity which will be at the top of the surface in the cube
-        # # build cubes to hold the result of the location weights
-        # wLocX = np.zeros((bins, bins, bins))
-        # wLocY = np.zeros((bins, bins, bins))
-        # # to update within neighborhood we iterate on each side of the radius, We don't need tho throw out the corners of this square because when multiplied against the weight they should be valued at 0
-        # for j in range(-radius, radius):
-        #     # update result with weights for each coordinate building the surface to the position given but shifting within the radius to the given weights
-        #     wLocX += (j + xLoc) * weights
-        #     wLocY += (j + yLoc) * weights
-        # # this produces the pixel weights, but it is not a weighted average. since we move between -rad and rad we need to divide the cubes by 2rad
-        # wLocX /= 2*radius
-        # wLocY /= 2*radius
-        # # via step 4 check that distance between locations is real
-        # # e = 1e-5
+
     y0 = np.array([xLoc, yLoc])
-    y1 = np.array(Y[24])
+    y1 = np.array(Y[49])
     shift = y1-y0
     euclidean = np.linalg.norm(shift)
     # below  would be if we wanted to stop after the distance is below e, for this we do a fixed number of iterations so it is not necessary
@@ -177,13 +149,13 @@ for index in range(0, len(video)-1):
     # else:
     eDist = euclidean
     # update locations with the equation in step 3 to find the best location now that we have xi*wi
-    xLoc = Y[24][0]
-    yLoc = Y[24][1]
-    path.append(Y[24])
+    xLoc = Y[49][0]
+    yLoc = Y[49][1]
+    path.append(Y[49])
     # plot_3d_histogram(p_test)
     # at this point all steps for the tracking should be completed and the resultant x and y pair should be the best location of the target candidate after 25 rounds
     print("Frame: ", index+2, "/", len(video))
-    print(Y[24])
+    print(Y[49])
     print(eDist)
 
 # Draw the path on the final frame
