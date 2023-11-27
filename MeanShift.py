@@ -72,7 +72,7 @@ def meanshiftWeights(X, q_model, p_test, bins):
     temp[:, 0] = X[:, 0]
     temp[:, 1] = X[:, 0]
     for index in range(2):
-        temp[:, index+2] = X[:, index+2]/bins
+        temp[:, index+2] = X[:, index+2]//bins
         temp[:, index+2] = temp[:, index+2]
     for i in range(a):
         rBin = int(temp[i, 2])
@@ -80,7 +80,10 @@ def meanshiftWeights(X, q_model, p_test, bins):
         bBin = int(temp[i, 4])
         model = q_model[rBin, gBin, bBin]
         test = p_test[rBin, gBin, bBin]  # is often 0?
-        weights[i] = np.sqrt(model/test)
+        if (test == 0):
+            weights[i] = 0
+        else:
+            weights[i] = np.sqrt(model/test)
 
     # # iterate on pixels of cube
     # for l in range(a):
@@ -109,11 +112,12 @@ files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
 print(video[0].shape)
-radius = 25
-bandwidth = 25
+
+radius = 75
+bandwidth = 100
 # these locations must be saved as floats for no rounding
-xLoc = 630.
-yLoc = 1382.
+xLoc = 633.
+yLoc = 1379.
 bins = 16
 # in order to also report euclidean distance between the final two iterations
 eDist = 0.
@@ -124,7 +128,6 @@ for index in range(0, len(video)-1):
     # the following must recieve integers for location for indexing
     # img1 model built with circular neighborhood with a rad of 25, centered at (149, 174)
     neighbors = circularNeighbors(video[index], int(xLoc), int(yLoc), radius)
-    print(neighbors.shape)
     # then passed to hist with a bin of 16 at the same coordinates and 25 bandwith
 
     q_model = colorHistogram(neighbors, bins, int(xLoc), int(yLoc), bandwidth)
@@ -135,14 +138,12 @@ for index in range(0, len(video)-1):
         # img2 model constructed the same way
         neighbors2 = circularNeighbors(
             video[index+1], int(xLoc), int(yLoc), radius)
-        print(neighbors2)
         p_test = colorHistogram(
             neighbors2, bins, int(xLoc), int(yLoc), bandwidth)
 
         # calculate mean shift weights to find best location, keep bin size
         weights = meanshiftWeights(neighbors2, q_model, p_test, bins)
         a, b = weights.shape
-        print(np.sum(weights))
 
         for j in range(a):
             if (j == 0):
@@ -166,25 +167,24 @@ for index in range(0, len(video)-1):
         # wLocY /= 2*radius
         # # via step 4 check that distance between locations is real
         # # e = 1e-5
-        # y0 = np.array([xLoc, yLoc])
-        # y1 = np.array([np.sum(wLocX)/np.sum(weights),
-        #                np.sum(wLocY)/np.sum(weights)])
-        # shift = y1-y0
-        # euclidean = np.linalg.norm(shift)
-        # # below  would be if we wanted to stop after the distance is below e, for this we do a fixed number of iterations so it is not necessary
-        # # if (euclidean <= e):
-        # #     break
-        # # else:
-        # eDist = euclidean
-        # # update locations with the equation in step 3 to find the best location now that we have xi*wi
-        # xLoc = y1[0]
-        # yLoc = y1[1]
+    y0 = np.array([xLoc, yLoc])
+    y1 = np.array(Y[24])
+    shift = y1-y0
+    euclidean = np.linalg.norm(shift)
+    # below  would be if we wanted to stop after the distance is below e, for this we do a fixed number of iterations so it is not necessary
+    # if (euclidean <= e):
+    #     break
+    # else:
+    eDist = euclidean
+    # update locations with the equation in step 3 to find the best location now that we have xi*wi
+    xLoc = Y[24][0]
+    yLoc = Y[24][1]
     path.append(Y[24])
     # plot_3d_histogram(p_test)
     # at this point all steps for the tracking should be completed and the resultant x and y pair should be the best location of the target candidate after 25 rounds
     print("Frame: ", index+2, "/", len(video))
     print(Y[24])
-    # print(eDist)
+    print(eDist)
 
 # Draw the path on the final frame
 output = np.copy(video[-1])
