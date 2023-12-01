@@ -6,6 +6,7 @@ from skimage import io
 from skimage import filters
 import numpy as np
 import math
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.mplot3d import Axes3D
@@ -67,7 +68,6 @@ def colorHistogram(X, bins, x, y, h):
 def meanshiftWeights(X, q_model, p_test, bins):
     a, b = X.shape
     temp = np.zeros(X.shape)
-    # will be calculating w for each pixel in the neighborhood so need same shape, weights will be 3d
     weights = np.zeros((a, 1))
     temp[:, 0] = X[:, 0]
     temp[:, 1] = X[:, 0]
@@ -97,13 +97,13 @@ files.sort()
 video = [io.imread(image) for image in files]
 video[0].shape, len(video)
 print(video[0].shape)
-# plt.imshow(video[0])
+# plt.imshow(video[1])
 # plt.show()
-radius = 75
-bandwidth = 100
+radius = 100
+bandwidth = 500
 # these locations must be saved as floats for no rounding
-xLoc = 686.
-yLoc = 1350.
+xLoc = 744.  # 686.
+yLoc = 1315.  # 1350.
 bins = 16
 # in order to also report euclidean distance between the final two iterations
 eDist = 0.
@@ -139,10 +139,13 @@ for index in range(0, len(video)-1):
                 Y[i][0] += (neighbors2[j][0]*weights[j]) / np.sum(weights)
                 Y[i][1] += (neighbors2[j][1]*weights[j]) / np.sum(weights)
 
-    y0 = np.array([xLoc, yLoc])
-    y1 = np.array(Y[49])
-    shift = y1-y0
-    euclidean = np.linalg.norm(shift)
+        y0 = np.array([xLoc, yLoc])
+        y1 = np.array(Y[49])
+        shift = y1-y0
+
+        euclidean = np.linalg.norm(shift)
+        # if (euclidean < 1):
+        #     break
     # below  would be if we wanted to stop after the distance is below e, for this we do a fixed number of iterations so it is not necessary
     # if (euclidean <= e):
     #     break
@@ -158,11 +161,12 @@ for index in range(0, len(video)-1):
     print(Y[49])
     print(eDist)
 
-# Draw the path on the final frame
-output = np.copy(video[-1])
-fig, ax = plt.subplots()
-plt.imshow(output)
-# Draw a line that passes through all the locations in the path
-ax.plot(*zip(*path), color='r')
-plt.axis('off')
-plt.show()
+    # Draw the path on the final frame
+    output = np.copy(video[index+1])
+    fig, ax = plt.subplots()
+    plt.imshow(output)
+    # Draw a line that passes through all the locations in the path
+    ax.plot(*zip(*path), color='r')
+    plt.axis('off')
+    plt.savefig(
+        '/Users/dflippo/Documents/GitHub/TrackingProject/output_1/img'+str(index)+'.jpg')
